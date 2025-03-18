@@ -1,0 +1,17 @@
+@font-face {
+  font-family: 'Neo Sans Zeli';
+  src: local('Neo Sans'), url(./fonts/Neo_Sans.TTF) format('truetype');
+}
+
+button {
+  font-family: 'Neo Sans Zeli';
+  font-size: 24pt;
+  color: antiquewhite;
+  background-color: brown;
+}
+.chatFrame {
+  font-family: 'Neo Sans Zeli';
+  font-size: 24pt;
+  color: antiquewhite;
+  background-color: dimgray;
+}
