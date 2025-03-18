@@ -39,6 +39,7 @@ export namespace ChatClient {
         public message: ChatMessage;
         public flags: any;
         public extra: any;
+        public timeStamp: Date;
 
         constructor(user: string, message: string, flags: any, extra: any) {
             this.messageID = crypto.randomUUID()
@@ -46,6 +47,7 @@ export namespace ChatClient {
             this.message = new ChatMessage(this.user, message);
             this.flags = flags;
             this.extra = extra;
+            this.timeStamp = new Date();
         }
         
         public render() {
@@ -65,10 +67,4 @@ export namespace ChatClient {
             );
         }
     }
-
-    /*export class MessageQueue extends Array {
-        push() {
-
-        }
-    }*/
 }
