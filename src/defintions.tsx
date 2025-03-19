@@ -1,3 +1,5 @@
+import React from "react";
+
 export namespace ChatClient {
     export class Streamer {
         public channelName: string;
@@ -39,7 +41,8 @@ export namespace ChatClient {
         public message: ChatMessage;
         public flags: any;
         public extra: any;
-        public timeStamp: Date;
+        public timeStamp;
+        public fadeOut: boolean = false;
 
         constructor(user: string, message: string, flags: any, extra: any) {
             this.messageID = crypto.randomUUID()
@@ -52,7 +55,7 @@ export namespace ChatClient {
         
         public render() {
             return (
-                <div className="chate-frame" key={this.messageID}>
+                <li id={this.messageID} className={"chat-frame" + (this.fadeOut ? ' fade-out':'')} key={this.messageID}>
                     <div className="user-frame">
                         <div className="username" style={{color: this.user.nameColor}}>
                             {this.user.displayName}
@@ -63,7 +66,7 @@ export namespace ChatClient {
                             {this.message.toString()}
                         </div>
                     </div>
-                </div>
+                </li>
             );
         }
     }

@@ -3,15 +3,67 @@
   src: local('Neo Sans'), url(./fonts/Neo_Sans.TTF) format('truetype');
 }
 
-button {
-  font-family: 'Neo Sans Zeli';
-  font-size: 24pt;
-  color: antiquewhite;
-  background-color: brown;
+@keyframes slide-in-left {
+  from {
+      transform: translateX(400px);
+      opacity: 0;
+  }
+
+  to {
+      transform: translateX(0);
+      opacity: 1;
+  }
 }
-.chatFrame {
+
+@keyframes fade-out {
+  0% {
+    opacity: 1;
+  }
+  99% {
+    opacity: 0.01;
+    visibility: visible;
+  }
+
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+li {
+  list-style-type: none;
+}
+
+#chat-container {
+  width: 400px;
+  height: 800px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column-reverse;
+  scrollbar-width: none;
+  margin: 0px;
+  padding: 0px;
+}
+
+.chat-frame {
   font-family: 'Neo Sans Zeli';
   font-size: 24pt;
   color: antiquewhite;
   background-color: dimgray;
+}
+
+li.chat-frame:first-of-type {
+  animation-name: slide-in-left;
+  animation-duration: 250ms;
+  animation-timing-function: ease-in;
+}
+
+.message-frame {
+  padding-left: 15px;
+}
+
+.fade-out {
+  background-color: purple;
+  animation: fade-out 500ms;
+  animation-fill-mode: forwards;
 }
