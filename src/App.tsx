@@ -11,7 +11,6 @@ ComfyJS.Init(myStreamer.channelName)
 
 function App() {
   const [messageQueue, setMessageQueue] = useState([] as ChatClient.ChatFrame[]);
-  const [isFadingOut, setFadingOut] = useState(false)
 
   useEffect(() => {
     let newMessageQueue = messageQueue;
