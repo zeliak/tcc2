@@ -69,9 +69,14 @@ li.chat-frame:first-of-type {
   animation-fill-mode: forwards;
 }
 
-.user-pfp img {
+.user-pfp {
+  width: 50px;
+  height: 50px;
   float: left;
+  margin-right: 10px;
+}
+
+.user-pfp img {
   border-radius: 50%;
   width: 50px;
-  margin-right: 10px;
 }

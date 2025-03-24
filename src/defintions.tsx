@@ -1,5 +1,5 @@
 import { error } from "console";
-import React from "react";
+import React, { JSX } from "react";
 
 export namespace ChatClient {
     export class Streamer {
@@ -12,87 +12,135 @@ export namespace ChatClient {
         }
     }
 
-    interface Pfp {
+    export interface IChatterProps {
+        displayName: string;
+        userName: string;
+        nameColor?: string;
+        pfpUrl?: string;
+    }
+
+    export interface IChatterState {
+        displayName: string;
+        userName: string
+        nameColor?: string;
+        pfpUrl: string;
+        loading: boolean;
+    }
+
+    interface IPfp {
         userName: string
         pfpUrl: string
     }
 
-    export class Chatter {
-        public displayName: string;
-        public nameColor: string;
-        public pfpUrl?: string;
+    export class Chatter extends React.Component<IChatterProps,IChatterState> {
 
-        constructor(displayName: string, userColor: string) {
-            this.displayName = displayName;
-            this.nameColor = userColor ?? 'firebrick';
+        constructor(props: IChatterProps) {
+            super(props)
+            this.state = {
+                displayName:this.props.displayName,
+                userName:this.props.userName,
+                nameColor:this.props.nameColor || 'firebrick',
+                pfpUrl:"",
+                loading:true
+            }
+            this.init(this.props.userName)
         }
 
-        public setPfpUrl() {
-            let requestUrl = 'http://localhost:5000/twitch/userpfp?username=' + this.displayName.toLowerCase();
-            const pfpUrl = async (url: string): Promise<Pfp> => {
-                const data = await fetch(url)
-                const pfp = await data.json() as Pfp
-                return pfp as Pfp
-            }
+        private init(userName: string) {
+            const requestUrl = 'http://localhost:5000/twitch/userpfp?username=' + userName.toLowerCase();
+            const res = fetch(requestUrl).then(res => res.json());
+            res.then(json => {
+                const data = json as IPfp
+                this.setState({pfpUrl:data.pfpUrl,loading:false})
+            });
+        }
 
-            pfpUrl(requestUrl)
-                .then(res => {this.pfpUrl = res.pfpUrl})
-                .catch(err => console.log('no pfp'))
+        public render(): JSX.Element {
+            return(
+                <div className="user-frame">
+                    <div className="user-pfp">
+                        {
+                            (!this.state.loading)?
+                            <img src={this.state.pfpUrl} alt="pfp" />:<></>
+                        }
+                    </div>
+                    <div className="username" style={{color: this.state.nameColor}}>
+                        {this.state.displayName}
+                    </div>
+                </div>
+            )
         }
     }
 
-    export class ChatMessage {
-        public chatter: Chatter;
-        private rawMessage: string;
+    export interface IChatMessageProps {
+        rawMessage: string
+    }
 
-        constructor(chatter: Chatter, rawMessage: string) {
-            this.chatter = chatter;
-            this.rawMessage = rawMessage;
+    export interface IChatMessageState {
+        rawMessage: string,
+        isLoading: boolean
+    }
+
+    export class ChatMessage extends React.Component<IChatMessageProps, IChatMessageState> {
+
+        constructor(props: IChatMessageProps) {
+            super(props)
+            this.state = {
+                rawMessage:this.props.rawMessage,
+                isLoading:true
+            }
         }
 
-        public toString(): string {
-            return this.rawMessage as string
+        public render() {
+            return(
+                <div className="message-frame">
+                    <div className="message">
+                        {this.state.rawMessage}
+                    </div>
+                </div>
+            )
         }
+    }
+
+    export interface IChatFrameProps {
+        messageID?: string,
+        rawMessage: string,
+        flags: any,
+        extra: any,
+        timeStamp?: Date
+    }
+
+    export interface IChatFrameState {
+        messageID?: string,
+        rawMessage: string,
+        flags: any,
+        extra: any,
+        timeStamp: Date,
+        isExpired: boolean
     }
 
     export class ChatFrame {
         public messageID: string;
-        public user: Chatter;
-        public message: ChatMessage;
+        public rawMessage: string;
         public flags: any;
         public extra: any;
         public timeStamp;
         public fadeOut: boolean = false;
 
         constructor(user: string, message: string, flags: any, extra: any) {
-            this.messageID = crypto.randomUUID()
-            this.user = new Chatter(extra.displayName, extra.userColor);
-            this.message = new ChatMessage(this.user, message);
+            this.messageID = crypto.randomUUID();
+            this.rawMessage = message;
             this.flags = flags;
             this.extra = extra;
             this.timeStamp = new Date();
-        }
-        
-        public setChatterPfp() {
-            this.user.setPfpUrl()
         }
 
         public render() {
             return (
                 <li id={this.messageID} className={"chat-frame" + (this.fadeOut ? ' fade-out':'')} key={this.messageID}>
-                    <div className="user-frame">
-                        <div className="user-pfp">
-                            <img src={this.user.pfpUrl} alt="" />
-                        </div>
-                        <div className="username" style={{color: this.user.nameColor}}>
-                            {this.user.displayName}
-                        </div>
-                    </div>
-                    <div className="message-frame">
-                        <div className="message">
-                            {this.message.toString()}
-                        </div>
-                    </div>
+                    <Chatter nameColor={this.extra.userColor} displayName={this.extra.displayName} userName={this.extra.username}></Chatter>
+                    <br />
+                    <ChatMessage rawMessage={this.rawMessage}></ChatMessage>
                 </li>
             );
         }

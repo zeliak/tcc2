@@ -39,7 +39,6 @@ ComfyJS.Init(myStreamer.channelName)
   ComfyJS.onChat = (user: string, message: string, flags: object, self: any, extra: any) => {
     console.log(`New chat message by ${extra.username}`);
     var myChatFrame = new ChatClient.ChatFrame(user, message, flags, extra)
-    myChatFrame.setChatterPfp();
     let newMessageQueue = [myChatFrame, ...messageQueue]
     setMessageQueue(newMessageQueue)
   }
