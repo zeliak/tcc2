@@ -47,9 +47,10 @@ li {
 
 .chat-frame {
   font-family: 'Neo Sans Zeli';
-  font-size: 24pt;
+  font-size: 16pt;
   color: antiquewhite;
   background-color: dimgray;
+  padding: 5px;
 }
 
 li.chat-frame:first-of-type {
@@ -59,11 +60,18 @@ li.chat-frame:first-of-type {
 }
 
 .message-frame {
-  padding-left: 15px;
+  padding-left: 5px;
 }
 
 .fade-out {
   background-color: purple;
   animation: fade-out 500ms;
   animation-fill-mode: forwards;
+}
+
+.user-pfp img {
+  float: left;
+  border-radius: 50%;
+  width: 50px;
+  margin-right: 10px;
 }

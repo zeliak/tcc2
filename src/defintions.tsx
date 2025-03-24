@@ -1,3 +1,4 @@
+import { error } from "console";
 import React from "react";
 
 export namespace ChatClient {
@@ -11,13 +12,32 @@ export namespace ChatClient {
         }
     }
 
+    interface Pfp {
+        userName: string
+        pfpUrl: string
+    }
+
     export class Chatter {
         public displayName: string;
         public nameColor: string;
+        public pfpUrl?: string;
 
         constructor(displayName: string, userColor: string) {
             this.displayName = displayName;
             this.nameColor = userColor ?? 'firebrick';
+        }
+
+        public setPfpUrl() {
+            let requestUrl = 'http://localhost:5000/twitch/userpfp?username=' + this.displayName.toLowerCase();
+            const pfpUrl = async (url: string): Promise<Pfp> => {
+                const data = await fetch(url)
+                const pfp = await data.json() as Pfp
+                return pfp as Pfp
+            }
+
+            pfpUrl(requestUrl)
+                .then(res => {this.pfpUrl = res.pfpUrl})
+                .catch(err => console.log('no pfp'))
         }
     }
 
@@ -53,10 +73,17 @@ export namespace ChatClient {
             this.timeStamp = new Date();
         }
         
+        public setChatterPfp() {
+            this.user.setPfpUrl()
+        }
+
         public render() {
             return (
                 <li id={this.messageID} className={"chat-frame" + (this.fadeOut ? ' fade-out':'')} key={this.messageID}>
                     <div className="user-frame">
+                        <div className="user-pfp">
+                            <img src={this.user.pfpUrl} alt="" />
+                        </div>
                         <div className="username" style={{color: this.user.nameColor}}>
                             {this.user.displayName}
                         </div>
