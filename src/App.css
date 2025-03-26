@@ -80,3 +80,11 @@ li.chat-frame:first-of-type {
   border-radius: 50%;
   width: 50px;
 }
+
+.ready {
+  visibility: visible;
+}
+
+.not-ready {
+  visibility: hidden;
+}

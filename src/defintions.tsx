@@ -14,21 +14,22 @@ export namespace ChatClient {
 
     export interface IChatterProps {
         displayName: string;
-        userName: string;
+        username: string;
         nameColor?: string;
         pfpUrl?: string;
+        handleUsernameReady: Function;
     }
 
     export interface IChatterState {
         displayName: string;
-        userName: string
+        username: string
         nameColor?: string;
         pfpUrl: string;
-        loading: boolean;
+        isReady: boolean;
     }
 
     interface IPfp {
-        userName: string
+        username: string
         pfpUrl: string
     }
 
@@ -38,29 +39,29 @@ export namespace ChatClient {
             super(props)
             this.state = {
                 displayName:this.props.displayName,
-                userName:this.props.userName,
+                username:this.props.username,
                 nameColor:this.props.nameColor || 'firebrick',
                 pfpUrl:"",
-                loading:true
+                isReady:false
             }
-            this.init(this.props.userName)
         }
 
-        private init(userName: string) {
-            const requestUrl = 'http://localhost:5000/twitch/userpfp?username=' + userName.toLowerCase();
+        componentDidMount(): void {
+            const requestUrl = 'http://localhost:5000/twitch/userpfp?username=' + this.props.username.toLowerCase();
             const res = fetch(requestUrl).then(res => res.json());
             res.then(json => {
-                const data = json as IPfp
-                this.setState({pfpUrl:data.pfpUrl,loading:false})
+                const data = json as IPfp;
+                this.setState({pfpUrl:data.pfpUrl,isReady:true});
+                this.props.handleUsernameReady();
             });
         }
-
+        
         public render(): JSX.Element {
             return(
                 <div className="user-frame">
                     <div className="user-pfp">
                         {
-                            (!this.state.loading)?
+                            (this.state.isReady)?
                             <img src={this.state.pfpUrl} alt="pfp" />:<></>
                         }
                     </div>
@@ -73,25 +74,30 @@ export namespace ChatClient {
     }
 
     export interface IChatMessageProps {
-        rawMessage: string
+        rawMessage: string,
+        handleMessageReady: Function
     }
 
     export interface IChatMessageState {
         rawMessage: string,
-        isLoading: boolean
+        isReady: boolean
     }
 
     export class ChatMessage extends React.Component<IChatMessageProps, IChatMessageState> {
 
         constructor(props: IChatMessageProps) {
-            super(props)
+            super(props);
             this.state = {
                 rawMessage:this.props.rawMessage,
-                isLoading:true
-            }
+                isReady:false
+            };
         }
 
-        public render() {
+        componentDidMount(): void {
+            this.props.handleMessageReady();
+        }
+
+        public render(): JSX.Element {
             return(
                 <div className="message-frame">
                     <div className="message">
@@ -102,47 +108,110 @@ export namespace ChatClient {
         }
     }
 
-    export interface IChatFrameProps {
-        messageID?: string,
+    export interface IChatMessageFrameProps {
+        messageID: string,
+        user: string,
         rawMessage: string,
         flags: any,
         extra: any,
-        timeStamp?: Date
-    }
-
-    export interface IChatFrameState {
-        messageID?: string,
-        rawMessage: string,
-        flags: any,
-        extra: any,
-        timeStamp: Date,
+        timeStamp: Date
         isExpired: boolean
     }
 
-    export class ChatFrame {
-        public messageID: string;
-        public rawMessage: string;
-        public flags: any;
-        public extra: any;
-        public timeStamp;
-        public fadeOut: boolean = false;
+    export interface IChatMessageFrameState {
+        isExpired: boolean,
+        isUsernameReady: boolean,
+        isMessageReady: boolean
+    }
 
-        constructor(user: string, message: string, flags: any, extra: any) {
-            this.messageID = crypto.randomUUID();
-            this.rawMessage = message;
-            this.flags = flags;
-            this.extra = extra;
-            this.timeStamp = new Date();
+    export class ChatMessageFrame extends React.Component<IChatMessageFrameProps,IChatMessageFrameState> {
+        constructor(props: IChatMessageFrameProps) {
+            super(props);
+            this.state = {
+                isExpired:false,
+                isMessageReady:true,
+                isUsernameReady:false
+            };
+            this.handleUsernameReady = this.handleUsernameReady.bind(this);
+            this.handleMessageReady = this.handleMessageReady.bind(this);
+        }
+
+        componentDidMount(): void {
+        }
+
+        componentDidUpdate(prevProps: Readonly<IChatMessageFrameProps>, prevState: Readonly<IChatMessageFrameState>, snapshot?: any): void {
+            if (prevState.isExpired !== this.props.isExpired) {
+                this.setState({
+                    isExpired:this.props.isExpired
+                })
+            }
+        }
+        
+        handleUsernameReady() {
+            this.setState({
+                isUsernameReady:true
+            });
+        }
+
+        handleMessageReady() {
+            this.setState({
+                isMessageReady:true
+            });
+        }
+
+        public isReady(): boolean {
+            if (this.state.isMessageReady && this.state.isUsernameReady) {
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+
+        public getMessageFrameClasses(): string {
+            var messageFrameClasses = "chat-frame"
+            if (this.state.isExpired) {
+                messageFrameClasses += ' fade-out'
+            }
+
+            if (this.isReady()) {
+                messageFrameClasses += ' ready'
+            }
+            else {
+                messageFrameClasses += ' not-ready'
+            }
+
+            return messageFrameClasses
         }
 
         public render() {
-            return (
-                <li id={this.messageID} className={"chat-frame" + (this.fadeOut ? ' fade-out':'')} key={this.messageID}>
-                    <Chatter nameColor={this.extra.userColor} displayName={this.extra.displayName} userName={this.extra.username}></Chatter>
+            return(
+                <li id={this.props.messageID} className={this.getMessageFrameClasses()}>
+                    <Chatter nameColor={this.props.extra.userColor} displayName={this.props.extra.displayName} username={this.props.extra.username}  handleUsernameReady={this.handleUsernameReady}></Chatter>
                     <br />
-                    <ChatMessage rawMessage={this.rawMessage}></ChatMessage>
+                    <ChatMessage rawMessage={this.props.rawMessage} handleMessageReady={this.handleMessageReady}></ChatMessage>
                 </li>
-            );
+            )
+        }
+    }
+
+    export class NewMessage {
+        public messageID: string;
+        public user: string;
+        public message: string;
+        public flags: any;
+        public extra: any;
+        public timeStamp: Date;
+        public isExpired: boolean
+
+        constructor(user: string, message: string, flags: any, extra: any) {
+            this.messageID = crypto.randomUUID();
+            this.user = user;
+            this.message = message;
+            this.flags = flags;
+            this.extra = extra;
+            this.timeStamp = new Date();
+            this.isExpired = false
         }
     }
 }
