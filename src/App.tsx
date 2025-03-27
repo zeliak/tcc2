@@ -1,42 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import './App.css';
 import { ChatClient } from "./defintions";
 import ComfyJS from "comfy.js";
-import { addMilliseconds } from 'date-fns';
 import React from 'react';
-import { timeStamp } from 'console';
 
 const myStreamer = new ChatClient.Streamer('zentreya','asd');
-const messageTimeout = 5000;
+const messageTimeout = 6000;
 
 ComfyJS.Init(myStreamer.channelName)
 
- function App() {
-  const [messageQueue, setMessageQueue] = useState([] as ChatClient.NewMessage[]);
+export interface IChatAppState {
+  messageQueue: ChatClient.NewMessage[]
+}
 
-  useEffect(() => {
-    let newMessageQueue = messageQueue;
-
-    const interval = setInterval(() => {
-      let currentTimeStamp = new Date()
-      for (let i = 0; i < newMessageQueue.length; i++) {
-        let item = newMessageQueue[i];
-        let age = addMilliseconds(item.timeStamp, (messageTimeout - 500));
-        if (age < currentTimeStamp) {
-          item.isExpired = true;
-          newMessageQueue[i] = item;
-        }
-      }
-
-      const items = newMessageQueue.filter(item => {
-        let age = addMilliseconds(item.timeStamp, messageTimeout);
-        return (age > currentTimeStamp) as Boolean;
-      });
-      
-      setMessageQueue(items);
-    }, 500);
-    return () => clearInterval(interval);
-  }, [messageQueue, setMessageQueue]);
+function ChatApp() {
+  const [messageQueue, setMessageQueue] = useState([] as ChatClient.NewMessage[])
 
   ComfyJS.onChat = (user: string, message: string, flags: object, self: any, extra: any) => {
     console.log(`New chat message by ${extra.displayName}`);
@@ -45,14 +23,34 @@ ComfyJS.Init(myStreamer.channelName)
     setMessageQueue(newMessageQueue);
   }
 
+  const filterMessageQueue = (messageID: string) => {
+    let newMessageQueue = messageQueue
+
+    const filteredQueue = newMessageQueue.filter(item => {
+      return (messageID !== item.messageID) as boolean
+    });
+
+    setMessageQueue(filteredQueue);
+  }
+
   return (
     <ul id='chat-container'>
       {messageQueue.map(cf => (
         <React.Fragment key={cf.messageID}>
-          <ChatClient.ChatMessageFrame messageID={cf.messageID} user={cf.user} rawMessage={cf.message} flags={cf.flags} extra={cf.extra} timeStamp={cf.timeStamp} isExpired={cf.isExpired}></ChatClient.ChatMessageFrame>
+          <ChatClient.ChatMessageFrame 
+            messageID={cf.messageID}
+            user={cf.user}
+            rawMessage={cf.message}
+            flags={cf.flags}
+            extra={cf.extra}
+            timeStamp={cf.timeStamp}
+            isExpired={cf.isExpired}
+            selfDestroy={filterMessageQueue}
+            lifeTime={messageTimeout}
+          />
         </React.Fragment> ))}
     </ul>
   );
 }
 
-export default App;
+export default ChatApp;

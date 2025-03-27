@@ -1,4 +1,3 @@
-import { error } from "console";
 import React, { JSX } from "react";
 
 export namespace ChatClient {
@@ -93,7 +92,7 @@ export namespace ChatClient {
             };
         }
 
-        componentDidMount(): void {
+        public componentDidMount(): void {
             this.props.handleMessageReady();
         }
 
@@ -116,44 +115,76 @@ export namespace ChatClient {
         extra: any,
         timeStamp: Date
         isExpired: boolean
+        selfDestroy: Function
+        lifeTime: number
     }
 
     export interface IChatMessageFrameState {
         isExpired: boolean,
         isUsernameReady: boolean,
-        isMessageReady: boolean
+        isMessageReady: boolean,
+        animationClass: string
     }
 
     export class ChatMessageFrame extends React.Component<IChatMessageFrameProps,IChatMessageFrameState> {
+        fadeOutTimer?: NodeJS.Timeout;
+        destroyTimer?: NodeJS.Timeout;
+
         constructor(props: IChatMessageFrameProps) {
             super(props);
             this.state = {
                 isExpired:false,
                 isMessageReady:true,
-                isUsernameReady:false
+                isUsernameReady:false,
+                animationClass:"fly-in"
             };
             this.handleUsernameReady = this.handleUsernameReady.bind(this);
             this.handleMessageReady = this.handleMessageReady.bind(this);
         }
 
-        componentDidMount(): void {
+        private initTimers() {
+            if (this.fadeOutTimer != null) {
+                clearTimeout(this.fadeOutTimer)
+            }
+
+            if (this.destroyTimer != null){
+                clearTimeout(this.destroyTimer)
+            }
+
+            this.fadeOutTimer = setTimeout(() => {
+                this.setState({isExpired:true});
+                clearTimeout(this.fadeOutTimer);
+            }, this.props.lifeTime - 500);
+            this.destroyTimer = setTimeout(() => {
+                this.props.selfDestroy(this.props.messageID);
+                clearTimeout(this.destroyTimer);
+            }, this.props.lifeTime);
         }
 
-        componentDidUpdate(prevProps: Readonly<IChatMessageFrameProps>, prevState: Readonly<IChatMessageFrameState>, snapshot?: any): void {
+        public componentDidMount(): void {
+            this.initTimers();
+        }
+
+        public componentDidUpdate(prevProps: Readonly<IChatMessageFrameProps>, prevState: Readonly<IChatMessageFrameState>, snapshot?: any): void {
             if (prevState.isExpired !== this.props.isExpired) {
                 this.setState({
                     isExpired:this.props.isExpired
                 })
             }
         }
+
+        public componentWillUnmount(): void {
+            clearTimeout(this.fadeOutTimer);
+            clearTimeout(this.destroyTimer);
+        }
         
-        handleUsernameReady() {
+        public handleUsernameReady() {
             this.setState({
                 isUsernameReady:true
             });
         }
 
-        handleMessageReady() {
+        public handleMessageReady() {
             this.setState({
                 isMessageReady:true
             });
@@ -168,14 +199,21 @@ export namespace ChatClient {
             }
         }
 
+        public handleAnimation() {
+            if (this.isReady()) {
+                
+            }
+            return ""
+        }
+
         public getMessageFrameClasses(): string {
             var messageFrameClasses = "chat-frame"
-            if (this.state.isExpired) {
-                messageFrameClasses += ' fade-out'
+            if (this.state.isExpired && 'fade-out' !== this.state.animationClass) {
+                this.setState({animationClass:'fade-out'})
             }
 
             if (this.isReady()) {
-                messageFrameClasses += ' ready'
+                messageFrameClasses += ' ready ' + this.state.animationClass
             }
             else {
                 messageFrameClasses += ' not-ready'
@@ -186,7 +224,7 @@ export namespace ChatClient {
 
         public render() {
             return(
-                <li id={this.props.messageID} className={this.getMessageFrameClasses()}>
+                <li id={this.props.messageID} className={this.getMessageFrameClasses()} >
                     <Chatter nameColor={this.props.extra.userColor} displayName={this.props.extra.displayName} username={this.props.extra.username}  handleUsernameReady={this.handleUsernameReady}></Chatter>
                     <br />
                     <ChatMessage rawMessage={this.props.rawMessage} handleMessageReady={this.handleMessageReady}></ChatMessage>

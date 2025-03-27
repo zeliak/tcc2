@@ -5,7 +5,7 @@
 
 @keyframes slide-in-left {
   from {
-      transform: translateX(400px);
+      transform: translateX(-400px);
       opacity: 0;
   }
 
@@ -19,6 +19,7 @@
   0% {
     opacity: 1;
   }
+  
   99% {
     opacity: 0.01;
     visibility: visible;
@@ -53,9 +54,9 @@ li {
   padding: 5px;
 }
 
-li.chat-frame:first-of-type {
+li.fly-in {
   animation-name: slide-in-left;
-  animation-duration: 250ms;
+  animation-duration: 500ms;
   animation-timing-function: ease-in;
 }
 
