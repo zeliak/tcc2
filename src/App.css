@@ -56,12 +56,16 @@ li {
 
 li.fly-in {
   animation-name: slide-in-left;
-  animation-duration: 500ms;
+  animation-duration: 300ms;
   animation-timing-function: ease-in;
 }
 
 .message-frame {
   padding-left: 5px;
+}
+
+.message {
+  word-wrap: break-word;
 }
 
 .fade-out {

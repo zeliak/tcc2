@@ -45,14 +45,28 @@ export namespace ChatClient {
             }
         }
 
-        componentDidMount(): void {
+        private async fetchPfpUrl() {
             const requestUrl = 'http://localhost:5000/twitch/userpfp?username=' + this.props.username.toLowerCase();
-            const res = fetch(requestUrl).then(res => res.json());
-            res.then(json => {
-                const data = json as IPfp;
-                this.setState({pfpUrl:data.pfpUrl,isReady:true});
-                this.props.handleUsernameReady();
-            });
+            var pfpUrlObj: IPfp = {
+                pfpUrl:'scrunge.jpg',
+                username:this.props.username
+            };
+
+            try {
+                const response = await fetch(requestUrl);
+                pfpUrlObj = await response.json() as IPfp;
+            } catch (error) {
+                console.error('failed to fetch pfp url', error);
+            }
+            finally {
+                    this.setState({pfpUrl:pfpUrlObj.pfpUrl,isReady:true});
+                    this.props.handleUsernameReady();
+            }
+
+        }
+
+        componentDidMount(): void {
+            this.fetchPfpUrl();
         }
         
         public render(): JSX.Element {
