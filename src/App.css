@@ -93,3 +93,20 @@ li.fly-in {
 .not-ready {
   visibility: hidden;
 }
+
+.badges {
+  height: 15px;
+  float: left;
+  margin: 0;
+  padding: 0;
+  padding-left: 10px;
+}
+
+.badge {
+  height: 15px;
+  float: left;
+  margin: 0;
+  padding: 0;
+  padding-right: 1px;
+}
+

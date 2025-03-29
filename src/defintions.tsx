@@ -1,4 +1,5 @@
 import React, { JSX } from "react";
+import scrunge from './img/scrunge.jpg'
 
 export namespace ChatClient {
     export class Streamer {
@@ -16,6 +17,7 @@ export namespace ChatClient {
         username: string;
         nameColor?: string;
         pfpUrl?: string;
+        badges?: object;
         handleUsernameReady: Function;
     }
 
@@ -24,12 +26,23 @@ export namespace ChatClient {
         username: string
         nameColor?: string;
         pfpUrl: string;
+        badges?: IBadgeUrl[];
         isReady: boolean;
     }
 
     interface IPfp {
         username: string
         pfpUrl: string
+    }
+    
+    interface IBadgeUrl {
+        name: string
+        imgUrl?: string
+        version: string
+    }
+
+    interface IBadge {
+        id: string
     }
 
     export class Chatter extends React.Component<IChatterProps,IChatterState> {
@@ -45,10 +58,48 @@ export namespace ChatClient {
             }
         }
 
+        private async fetchBadgesUrl(badgeIds?: object): Promise<void> {
+            const requestUrl = 'http://localhost:5000/twitch/userbadge';
+            var resolvedBadges: IBadgeUrl[] | undefined = [];
+
+
+            
+            if (null !== badgeIds) {
+                for (const [k, v] of Object.entries(badgeIds as IBadge)) {
+                    let badge: IBadgeUrl = {
+                        name:k,
+                        version:v
+                    }
+
+                    if (undefined !== resolvedBadges) {
+                        resolvedBadges.push(badge);
+                    }
+                    else {
+                        console.warn('Badges dont fit in');
+                    }
+                }
+                try {
+                    const res = await fetch(requestUrl, {
+                        method: "POST",
+                        headers: {
+                          "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify(resolvedBadges)
+                    });
+                    resolvedBadges = await res.json() as IBadgeUrl[];
+                }
+                catch (error) {
+                    console.error('Fetching badges went wrong', error);
+                }
+    
+                this.setState({badges:resolvedBadges});
+            }
+        }
+
         private async fetchPfpUrl() {
             const requestUrl = 'http://localhost:5000/twitch/userpfp?username=' + this.props.username.toLowerCase();
             var pfpUrlObj: IPfp = {
-                pfpUrl:'scrunge.jpg',
+                pfpUrl:scrunge,
                 username:this.props.username
             };
 
@@ -67,6 +118,7 @@ export namespace ChatClient {
 
         componentDidMount(): void {
             this.fetchPfpUrl();
+            this.fetchBadgesUrl(this.props.badges);
         }
         
         public render(): JSX.Element {
@@ -80,6 +132,11 @@ export namespace ChatClient {
                     </div>
                     <div className="username" style={{color: this.state.nameColor}}>
                         {this.state.displayName}
+                    </div>
+                    <div className="badges">
+                        {this.state.badges?.map(badge => (
+                            <img src={badge.imgUrl} className="badge"/>
+                        ))}
                     </div>
                 </div>
             )
@@ -213,13 +270,6 @@ export namespace ChatClient {
             }
         }
 
-        public handleAnimation() {
-            if (this.isReady()) {
-                
-            }
-            return ""
-        }
-
         public getMessageFrameClasses(): string {
             var messageFrameClasses = "chat-frame"
             if (this.state.isExpired && 'fade-out' !== this.state.animationClass) {
@@ -239,7 +289,7 @@ export namespace ChatClient {
         public render() {
             return(
                 <li id={this.props.messageID} className={this.getMessageFrameClasses()} >
-                    <Chatter nameColor={this.props.extra.userColor} displayName={this.props.extra.displayName} username={this.props.extra.username}  handleUsernameReady={this.handleUsernameReady}></Chatter>
+                    <Chatter nameColor={this.props.extra.userColor} displayName={this.props.extra.displayName} username={this.props.extra.username} badges={this.props.extra.userBadges}  handleUsernameReady={this.handleUsernameReady}></Chatter>
                     <br />
                     <ChatMessage rawMessage={this.props.rawMessage} handleMessageReady={this.handleMessageReady}></ChatMessage>
                 </li>

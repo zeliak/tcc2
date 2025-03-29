@@ -3,21 +3,28 @@ import './App.css';
 import { ChatClient } from "./defintions";
 import ComfyJS from "comfy.js";
 import React from 'react';
+import { useSearchParams } from 'react-router'
 
-const myStreamer = new ChatClient.Streamer('zentreya','asd');
 const messageTimeout = 6000;
 
-ComfyJS.Init(myStreamer.channelName)
 
 export interface IChatAppState {
   messageQueue: ChatClient.NewMessage[]
 }
 
 function ChatApp() {
-  const [messageQueue, setMessageQueue] = useState([] as ChatClient.NewMessage[])
+  const [messageQueue, setMessageQueue] = useState([] as ChatClient.NewMessage[]);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const streamerName = searchParams.get('streamer') || 'zelixplore';
+  const myStreamer = new ChatClient.Streamer(streamerName, 'asd');
+  const cClient = ComfyJS.GetClient()
+  if (cClient === null) {
+    ComfyJS.Init(myStreamer.channelName)
+  }
 
   ComfyJS.onChat = (user: string, message: string, flags: object, self: any, extra: any) => {
-    console.log(`New chat message by ${extra.displayName}`);
+    console.debug(`New chat message by ${extra.displayName}`);
     const myNewMessage = new ChatClient.NewMessage(user, message, flags, extra);
     const newMessageQueue = [myNewMessage, ...messageQueue];
     setMessageQueue(newMessageQueue);
