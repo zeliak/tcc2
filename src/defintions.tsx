@@ -59,7 +59,7 @@ export namespace ChatClient {
         }
 
         private async fetchBadgesUrl(badgeIds?: object): Promise<void> {
-            const requestUrl = 'http://localhost:5000/twitch/userbadge';
+            const requestUrl = 'http://localhost:5000/user/badge?list=';
             var resolvedBadges: IBadgeUrl[] | undefined = [];
 
 
@@ -97,7 +97,7 @@ export namespace ChatClient {
         }
 
         private async fetchPfpUrl() {
-            const requestUrl = 'http://localhost:5000/twitch/userpfp?username=' + this.props.username.toLowerCase();
+            const requestUrl = 'http://localhost:5000/user/pfp?username=' + this.props.username.toLowerCase();
             var pfpUrlObj: IPfp = {
                 pfpUrl:scrunge,
                 username:this.props.username
@@ -135,7 +135,7 @@ export namespace ChatClient {
                     </div>
                     <div className="badges">
                         {this.state.badges?.map(badge => (
-                            <img src={badge.imgUrl} className="badge"/>
+                            <img src={badge.imgUrl} className="badge" key={badge.name}/>
                         ))}
                     </div>
                 </div>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Component, useState } from 'react';
 import './App.css';
 import { ChatClient } from "./defintions";
 import ComfyJS from "comfy.js";
