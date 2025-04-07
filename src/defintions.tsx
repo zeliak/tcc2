@@ -1,14 +1,17 @@
 import React, { JSX } from "react";
 import scrunge from './img/scrunge.jpg'
+import { ComfyJSInstance } from "comfy.js";
 
 export namespace ChatClient {
     export class Streamer {
         public channelName: string;
-        public channelId: string;
+        public channelId?: string;
 
-        constructor(channelName: string, channelId: string) {
+        constructor(channelName: string, channelId?: string) {
             this.channelName = channelName;
-            this.channelId = channelId
+            if (!!channelId) {
+                this.channelId = channelId
+            }
         }
     }
 
@@ -146,11 +149,27 @@ export namespace ChatClient {
     export interface IChatMessageProps {
         rawMessage: string,
         handleMessageReady: Function
+        extra: any
+        allNames: string
     }
 
     export interface IChatMessageState {
-        rawMessage: string,
+        message: string,
         isReady: boolean
+    }
+
+    export interface IEmote {
+        name?: string,
+        imgUrl?: string,
+        twitchId: string,
+        positions: string[]
+    }
+
+    export interface IEmoteFromDb {
+        name: string,
+        imgUrl: string,
+        twitchId: string,
+        _id: string
     }
 
     export class ChatMessage extends React.Component<IChatMessageProps, IChatMessageState> {
@@ -158,20 +177,81 @@ export namespace ChatClient {
         constructor(props: IChatMessageProps) {
             super(props);
             this.state = {
-                rawMessage:this.props.rawMessage,
+                message:this.props.rawMessage,
                 isReady:false
             };
         }
 
-        public componentDidMount(): void {
+        private getEmoteName(emote: IEmote, message: string):string {
+            const position = emote.positions[0];
+            const positions = position.split('-');
+            const startingPosition = Number(positions[0]);
+            const endingPosition = Number(positions[1]) + 1;
+
+            return message.substring(startingPosition,endingPosition);
+        }
+
+        private async resolveTwitchEmotes(): Promise<void> {
+            const fetchBase = 'http://localhost:5000/emote/fetchone';
+            var tempMessage = this.props.rawMessage;
+            const reSpecialChars = /[\!\#\$\%\^\&\*\)\(\+\=\.\<\>\{\}\[\]\:\;\'\"\|\~\`\_\-]/g;
+
+            if (this.props.extra.messageEmotes !== null) {
+                const tEmotes = this.props.extra.messageEmotes
+                for (const [k, v] of Object.entries(tEmotes as IEmote)) {
+                    let emote: IEmote = {
+                        twitchId:k,
+                        positions:v
+                    }
+                    emote.name = this.getEmoteName(emote, tempMessage)
+                    const fetchUrl = fetchBase + '?id=' + emote.twitchId + '&name=' + emote.name;
+                    const res = await fetch(fetchUrl, {
+                        method: "GET"
+                    });
+                }
+            }
+            else {
+                console.debug('No twitch emotes, nothing to do');
+            }
+
+            const emoteRe = new RegExp(this.props.allNames, 'g')
+            const matches: RegExpMatchArray | null = tempMessage.match(emoteRe)
+
+            if (null !== matches) {
+                for (let i = 0; i < matches.length; i++) {
+                    const emote = matches[i];
+                    const re = new RegExp(emote, 'g');
+                    const fetcResponse = await fetch('http://localhost:5000/emote/getone?name=' + emote, {
+                        method: 'GET'
+                    });
+                    if (fetcResponse.ok) {
+                        const myEmote = await fetcResponse.json() as IEmoteFromDb;
+                        const replaceText = `<img src="${myEmote.imgUrl}" alt="emote" class="emote" />`;
+                        tempMessage = tempMessage.replaceAll(re, replaceText);
+                    }
+                    else {
+                        console.warn('Could not get emote: ' + emote);
+                    }
+                }
+
+                this.setState({
+                    message: tempMessage,
+                    isReady: true
+                });
+            }
+
+            
+        }
+
+        public async componentDidMount(): Promise<void> {
+            await this.resolveTwitchEmotes();
             this.props.handleMessageReady();
         }
 
         public render(): JSX.Element {
             return(
                 <div className="message-frame">
-                    <div className="message">
-                        {this.state.rawMessage}
+                    <div className="message" dangerouslySetInnerHTML={{__html: this.state.message}}>
                     </div>
                 </div>
             )
@@ -188,6 +268,7 @@ export namespace ChatClient {
         isExpired: boolean
         selfDestroy: Function
         lifeTime: number
+        allNames: string
     }
 
     export interface IChatMessageFrameState {
@@ -289,9 +370,9 @@ export namespace ChatClient {
         public render() {
             return(
                 <li id={this.props.messageID} className={this.getMessageFrameClasses()} >
-                    <Chatter nameColor={this.props.extra.userColor} displayName={this.props.extra.displayName} username={this.props.extra.username} badges={this.props.extra.userBadges}  handleUsernameReady={this.handleUsernameReady}></Chatter>
+                    <Chatter nameColor={this.props.extra.userColor} displayName={this.props.extra.displayName} username={this.props.extra.username} badges={this.props.extra.userBadges} handleUsernameReady={this.handleUsernameReady}></Chatter>
                     <br />
-                    <ChatMessage rawMessage={this.props.rawMessage} handleMessageReady={this.handleMessageReady}></ChatMessage>
+                    <ChatMessage rawMessage={this.props.rawMessage} handleMessageReady={this.handleMessageReady} extra={this.props.extra} allNames={this.props.allNames}></ChatMessage>
                 </li>
             )
         }
